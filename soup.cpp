@@ -7,7 +7,7 @@
 using namespace std;
 #define NUMCHARS 26
 
-map<int,string> numberNames;
+map<unsigned char,string> numberNames;
 
 void init_number_names(void)
 {
@@ -43,7 +43,22 @@ void init_number_names(void)
 
 string convert_number_names(unsigned char input) 
 {
-    return to_string(input);
+    string output="";
+    for(map<unsigned char, string>::reverse_iterator iterator = numberNames.rbegin(); iterator != numberNames.rend(); iterator++) {
+        unsigned char key=iterator->first;
+        //cout << "checking " << to_string(input) << " against " << to_string(key) << endl;
+        if (key < input) {
+            //cout << "submatched " << to_string(input) << " against " << to_string(key) << endl;
+            return iterator->second + " " + convert_number_names(input - key);
+        }
+        else if (key == input) {
+            //cout << "matched " << to_string(input) << " against " << to_string(key) << endl;
+            return iterator->second;
+        }
+    }
+    cerr << "cannot convert " << to_string(input) << endl;
+    exit(EXIT_FAILURE);
+    return "This never returns.";
 }
 
 string gen_string(unsigned char counts[NUMCHARS])
