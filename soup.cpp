@@ -7,54 +7,23 @@
 
 using namespace std;
 #define NUMCHARS 26
+#define MAXCHARS 100
 
+map<unsigned char,string> initialNames;
 map<unsigned char,string> numberNames;
 int counter;
-
-void init_number_names(void)
-{
-    numberNames[90] = "ninety";
-    numberNames[80] = "eighty";
-    numberNames[70] = "seventy";
-    numberNames[60] = "sixty";
-    numberNames[50] = "fifty";
-    numberNames[40] = "forty";
-    numberNames[30] = "thirty";
-    numberNames[20] = "twenty";
-    numberNames[19] = "nineteen";
-    numberNames[18] = "eighteen";
-    numberNames[17] = "seventeen";
-    numberNames[16] = "sixteen";
-    numberNames[15] = "fifteen";
-    numberNames[14] = "fourteen";
-    numberNames[13] = "thirteen";
-    numberNames[12] = "twelve";
-    numberNames[11] = "eleven";
-    numberNames[10] = "ten";
-    numberNames[9] = "nine";
-    numberNames[8] = "eight";
-    numberNames[7] = "seven";
-    numberNames[6] = "six";
-    numberNames[5] = "five";
-    numberNames[4] = "four";
-    numberNames[3] = "three";
-    numberNames[2] = "two";
-    numberNames[1] = "one";
-    numberNames[0] = "zero";
-}
 
 string convert_number_names(unsigned char input) 
 {
     string output = "";
-    for(map<unsigned char, string>::reverse_iterator iterator = numberNames.rbegin(); iterator != numberNames.rend(); iterator++) {
+    for(map<unsigned char, string>::reverse_iterator iterator = initialNames.rbegin(); iterator != initialNames.rend(); iterator++) {
         unsigned char key=iterator->first;
-        //cout << "checking " << to_string(input) << " against " << to_string(key) << endl;
         if (key < input) {
             //cout << "submatched " << to_string(input) << " against " << to_string(key) << endl;
             return iterator->second + " " + convert_number_names(input - key);
         }
         else if (key == input) {
-            //cout << "matched " << to_string(input) << " against " << to_string(key) << endl;
+            //cout << "matched " << to_string(input) << " against " << to_string(key) << " yields " << iterator->second << endl;
             return iterator->second;
         }
     }
@@ -63,17 +32,68 @@ string convert_number_names(unsigned char input)
     return "This never returns.";
 }
 
+void init_number_names(void)
+{
+    unsigned char index;
+
+    initialNames[90] = "ninety";
+    initialNames[80] = "eighty";
+    initialNames[70] = "seventy";
+    initialNames[60] = "sixty";
+    initialNames[50] = "fifty";
+    initialNames[40] = "forty";
+    initialNames[30] = "thirty";
+    initialNames[20] = "twenty";
+    initialNames[19] = "nineteen";
+    initialNames[18] = "eighteen";
+    initialNames[17] = "seventeen";
+    initialNames[16] = "sixteen";
+    initialNames[15] = "fifteen";
+    initialNames[14] = "fourteen";
+    initialNames[13] = "thirteen";
+    initialNames[12] = "twelve";
+    initialNames[11] = "eleven";
+    initialNames[10] = "ten";
+    initialNames[9] = "nine";
+    initialNames[8] = "eight";
+    initialNames[7] = "seven";
+    initialNames[6] = "six";
+    initialNames[5] = "five";
+    initialNames[4] = "four";
+    initialNames[3] = "three";
+    initialNames[2] = "two";
+    initialNames[1] = "one";
+    initialNames[0] = "zero";
+
+    for (index=0; index < MAXCHARS; index++) {
+        numberNames[index] = convert_number_names(index);
+        //cout << "initialized " << to_string(index) << " to " << numberNames[index] << endl;
+    }
+}
+
 string gen_string(unsigned char counts[NUMCHARS])
 {
     string output = "";
     char a = 'a';
+    unsigned char i;
 
-    for (unsigned char i=0; i<NUMCHARS; i++) {
-        output.append(convert_number_names(counts[i]));
+    for (i=0; i<NUMCHARS-1; i++) {
+        if (counts[i] >= MAXCHARS) {
+            cerr << "count of " << counts[i] << " has exceeded " << MAXCHARS << endl;
+            exit(EXIT_FAILURE);
+        }
+        output.append(numberNames[counts[i]]);
         output.append(" ");
         output.append(1,(a + i));
         output.append("'s, ");
     }
+    output.append("and ");
+    i=NUMCHARS-1;
+    output.append(numberNames[counts[i]]);
+    output.append(" ");
+    output.append(1,(a + i));
+    output.append("'s.");
+    
     return output;
 }
 
@@ -93,7 +113,6 @@ bool count_chars(string input, unsigned char counts[NUMCHARS])
             //cout << to_string(charIndex) << " " << *it << endl;
         }
     }
-
     return (--counter);
 }
 
@@ -102,7 +121,7 @@ int main(void)
     string prefix="Joe Boyle's challenge is to construct a sentence which contains ";
     unsigned char alphaCount[NUMCHARS] = { 0 };
     string testString;
-    counter=10;
+    counter=2;
 
     init_number_names();
 
