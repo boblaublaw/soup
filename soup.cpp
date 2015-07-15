@@ -78,7 +78,7 @@ inline string gen_string(charvec counts)
     string output = "";
     charvec_it it;
 
-    for (it=counts.begin(); it != counts.end() - 1; it++) {
+    for (it=counts.begin(); it != counts.end()-1; it++) {
         if (*it >= MAXCHARS) {
             cerr << "count of " << *it << " has exceeded " << MAXCHARS << endl;
             exit(EXIT_FAILURE);
@@ -99,18 +99,16 @@ inline string gen_string(charvec counts)
 
 inline void count_chars(string input, charvec counts)
 {
-    string::iterator it = input.begin();
+    string::iterator sit = input.begin();
     unsigned char index = 0;
     char charIndex;
 
-    for (index=0; index < NUMCHARS; index++) 
-        counts[index]=0;
-    for (it = input.begin() ; it < input.end(); ++it) {
-        charIndex = tolower(*it) - 'a';
-        if ((charIndex >= 0) && (charIndex <= 25 )) {
+    for (charvec_it cit=counts.begin(); cit != counts.end(); cit++) 
+        *cit=0;
+    for (sit = input.begin() ; sit < input.end(); ++sit) {
+        charIndex = tolower(*sit) - 'a';
+        if ((charIndex >= 0) && (charIndex < NUMCHARS)) 
             counts[charIndex]++;
-            //cout << to_string(charIndex) << " " << *it << endl;
-        }
     }
 }
 
@@ -137,21 +135,14 @@ inline int incr(charvec_it start, charvec_it stop)
     return rv;
 }
 
-inline bool mismatched(charvec a, charvec b)
-{
-    for (int index=0; index < NUMCHARS; index++) 
-        if (a[index] != b[index])
-            return true;
-    return false; 
-}
-
 inline string dumpvec(charvec x)
 {
     string result="";
-    for (int index=0; index < NUMCHARS-1; index++)  {
-        result.append(to_string(x[index]) + ",");
+    charvec_it it;
+    for (it=x.begin(); it != x.end()-1; it++) {
+        result.append(to_string(*it) + ",");
     }
-    result.append(to_string(x[NUMCHARS-1]));
+    result.append(to_string(*(x.end())));
     return result;
 }
 
@@ -175,7 +166,7 @@ void solve(string prefix)
         testString = prefix + gen_string(seed);
         count_chars(testString, result);
         cout << dumpvec(seed) << ":" << testString << endl;
-    } while (mismatched(seed, result));
+    } while (seed != result);
 }
 
 int main(void)
