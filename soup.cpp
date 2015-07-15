@@ -3,8 +3,38 @@
 #include <ctype.h>      // tolower
 #include <map>          // map
 #include <vector>       // vector
-#include <unistd.h>
+#include <unistd.h>     // exit
+#include <assert.h>     // assert
 using namespace std;
+
+#include <algorithm>
+#include <functional>
+
+template <typename T>
+std::vector<T> operator-(const std::vector<T>& a, const std::vector<T>& b)
+{
+    assert(a.size() == b.size());
+
+    std::vector<T> result;
+    result.reserve(a.size());
+
+    std::transform(a.begin(), a.end(), b.begin(),
+                   std::back_inserter(result), std::minus<T>());
+    return result;
+}
+
+template <typename T>
+std::vector<T> operator+(const std::vector<T>& a, const std::vector<T>& b)
+{
+    assert(a.size() == b.size());
+
+    std::vector<T> result;
+    result.reserve(a.size());
+
+    std::transform(a.begin(), a.end(), b.begin(), 
+                   std::back_inserter(result), std::plus<T>());
+    return result;
+}
 
 // consts
 #define NUMCHARS 26
@@ -122,8 +152,8 @@ void init_number_data(void)
         //                              |
         //                              |
         cv[i]['s' - 'a']++; 
-        cout << to_string(i) << ":";
-        cout << dumpvec(cv[i]) << ":" << numberNames[i] << endl;
+        //cout << to_string(i) << ":";
+        //cout << dumpvec(cv[i]) << ":" << numberNames[i] << endl;
     }
 }
 
@@ -157,18 +187,24 @@ void solve(string prefix)
     charvec result(NUMCHARS);
     charvec prefixCount(NUMCHARS);
     charvec ones(NUMCHARS);
+    charvec zero(NUMCHARS);
+    charvec diff(NUMCHARS);
     string sentence;
 
     for (charvec_it cit=ones.begin(); cit != ones.end(); cit++)
         *cit=1;
     
+    // start with the prefix
     count_chars(prefix, prefixCount);
-    cout << "prefix:" << dumpvec(prefixCount) << endl;
+    // add one instance of each letter
+    attempt = prefixCount + ones;
+    // make a sentence and determine histogram
     sentence = prefix + gen_string(prefixCount);
     count_chars(sentence, attempt);
 
     do {
         // modify the attempt
+        
        
         // generate the sentence 
         sentence = prefix + gen_string(attempt);
@@ -176,12 +212,14 @@ void solve(string prefix)
         // gen the histogram
         count_chars(sentence, result);
 
-        cout << dumpvec(attempt) << "-" << dumpvec(result);
-        cout << endl; 
-        cout << sentence;
+        diff = result - attempt;
+        //cout << dumpvec(attempt) << "-" << dumpvec(result);
+        //cout << endl; 
+        //cout << sentence;
+        cout << dumpvec(diff);
         cout << endl; 
 
-    } while (attempt == result);
+    } while (diff != zero);
 }
 
 int main(void)
