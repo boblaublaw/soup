@@ -17,7 +17,6 @@ typedef charvec::iterator charvec_it;
 // globals
 map<unsigned char,string> initialNames;
 map<unsigned char,string> numberNames;
-unsigned char maxn;
 
 string convert_number_names(unsigned char input) 
 {
@@ -31,7 +30,7 @@ string convert_number_names(unsigned char input)
     }
     cerr << "cannot convert " << to_string(input) << endl;
     exit(EXIT_FAILURE);
-    return "This never returns.";
+    return "This part never returns but I am suppressing a warning with it.";
 }
 
 void init_number_names(void)
@@ -69,7 +68,7 @@ void init_number_names(void)
     initialNames[0] = "zero";
 
     // fill in the blanks
-    for (index=0; index < MAXCHARS; index++) 
+    for (unsigned char index=0; index < MAXCHARS; index++) 
         numberNames[index] = convert_number_names(index);
 }
 
@@ -112,29 +111,6 @@ inline void count_chars(string input, charvec counts)
     }
 }
 
-inline int incr(charvec_it start, charvec_it stop)
-{
-    int rv=0;
-#if 0
-    for (charvec_it cur = start; cur != stop; ++cur) {
-       std::cout << *cur << endl;
-    }
-#endif
-    if (start == stop) {
-        rv=-1;
-    }
-    else if (*start < maxn) {
-        *start++;
-        rv=1;
-    }
-    else {
-        rv=incr(start + 1, stop);
-        if (rv==1)
-            *start=0;
-    }
-    return rv;
-}
-
 inline string dumpvec(charvec x)
 {
     string result="";
@@ -152,17 +128,10 @@ void solve(string prefix)
     charvec result(NUMCHARS);
     charvec zero(NUMCHARS);
     string testString;
+
     //count_chars(prefix, seed);
+
     do {
-        charvec_it start=seed.begin();
-        charvec_it stop=seed.end();
-        if (-1 == incr(start, stop)) {
-            cout << "incrementing maxn to " << to_string(maxn) << endl;
-            seed[0]++;
-            if (maxn++ == 100) {
-                cerr << "no solution counting up to " << to_string(MAXCHARS) << endl;
-            }
-        }
         testString = prefix + gen_string(seed);
         count_chars(testString, result);
         cout << dumpvec(seed) << ":" << testString << endl;
@@ -171,7 +140,6 @@ void solve(string prefix)
 
 int main(void)
 {
-    maxn=1;
     string prefix="Joe Boyle's challenge is to construct a sentence which contains ";
     init_number_names();
     solve(prefix);
