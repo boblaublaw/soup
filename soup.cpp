@@ -101,6 +101,7 @@ inline void count_chars(string input, charvec &counts)
     string::iterator sit = input.begin();
     unsigned char index = 0;
     char charIndex;
+    unsigned charCount=0;
 
     for (charvec_it cit=counts.begin(); cit != counts.end(); cit++)
         *cit=0;
@@ -109,13 +110,15 @@ inline void count_chars(string input, charvec &counts)
         if ((charIndex >= 0) && (charIndex < NUMCHARS)) {
             counts[charIndex]++;
             cout << "char " << to_string(distance(input.begin(),sit)) << ":" << *sit << "(" << to_string(charIndex) << ") = " << to_string(counts[charIndex]) << endl;
+            charCount++;
         }
     }
     int total=0;
     for (charvec_it cit=counts.begin(); cit != counts.end(); cit++) 
         total+=*cit;
-    if (total != input.length()) {
-        cerr << "input is " << to_string(input.length());
+
+    if (total != charCount) {
+        cerr << "input is " << to_string(charCount);
         cerr << " but array total is " << to_string(total) << endl;
         exit(EXIT_FAILURE);
     }
