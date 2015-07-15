@@ -11,17 +11,17 @@ using namespace std;
 #define MAXCHARS 100
 
 // typedefs
-typedef vector<unsigned char> charvec;
+typedef vector<char> charvec;
 typedef charvec::iterator charvec_it;
 
 // globals
-map<unsigned char,string> initialNames;
+map<unsigned char,string> simpleNames;
 map<unsigned char,string> numberNames;
 
 string convert_number_names(unsigned char input) 
 {
     string output = "";
-    for(map<unsigned char, string>::reverse_iterator it = initialNames.rbegin(); it != initialNames.rend(); it++) {
+    for(map<unsigned char, string>::reverse_iterator it = simpleNames.rbegin(); it != simpleNames.rend(); it++) {
         unsigned char key=it->first;
         if (key < input) 
             return it->second + " " + convert_number_names(input - key);
@@ -38,36 +38,36 @@ void init_number_names(void)
     unsigned char index;
 
     // human readable name parts:
-    initialNames[90] = "ninety";
-    initialNames[80] = "eighty";
-    initialNames[70] = "seventy";
-    initialNames[60] = "sixty";
-    initialNames[50] = "fifty";
-    initialNames[40] = "forty";
-    initialNames[30] = "thirty";
-    initialNames[20] = "twenty";
-    initialNames[19] = "nineteen";
-    initialNames[18] = "eighteen";
-    initialNames[17] = "seventeen";
-    initialNames[16] = "sixteen";
-    initialNames[15] = "fifteen";
-    initialNames[14] = "fourteen";
-    initialNames[13] = "thirteen";
-    initialNames[12] = "twelve";
-    initialNames[11] = "eleven";
-    initialNames[10] = "ten";
-    initialNames[9] = "nine";
-    initialNames[8] = "eight";
-    initialNames[7] = "seven";
-    initialNames[6] = "six";
-    initialNames[5] = "five";
-    initialNames[4] = "four";
-    initialNames[3] = "three";
-    initialNames[2] = "two";
-    initialNames[1] = "one";
-    initialNames[0] = "zero";
+    simpleNames[90] = "ninety";
+    simpleNames[80] = "eighty";
+    simpleNames[70] = "seventy";
+    simpleNames[60] = "sixty";
+    simpleNames[50] = "fifty";
+    simpleNames[40] = "forty";
+    simpleNames[30] = "thirty";
+    simpleNames[20] = "twenty";
+    simpleNames[19] = "nineteen";
+    simpleNames[18] = "eighteen";
+    simpleNames[17] = "seventeen";
+    simpleNames[16] = "sixteen";
+    simpleNames[15] = "fifteen";
+    simpleNames[14] = "fourteen";
+    simpleNames[13] = "thirteen";
+    simpleNames[12] = "twelve";
+    simpleNames[11] = "eleven";
+    simpleNames[10] = "ten";
+    simpleNames[9] = "nine";
+    simpleNames[8] = "eight";
+    simpleNames[7] = "seven";
+    simpleNames[6] = "six";
+    simpleNames[5] = "five";
+    simpleNames[4] = "four";
+    simpleNames[3] = "three";
+    simpleNames[2] = "two";
+    simpleNames[1] = "one";
+    simpleNames[0] = "zero";
 
-    // fill in the blanks
+    // generate compound names
     for (unsigned char index=0; index < MAXCHARS; index++) 
         numberNames[index] = convert_number_names(index);
 }
@@ -96,18 +96,28 @@ inline string gen_string(charvec counts)
     return output;
 }
 
-inline void count_chars(string input, charvec counts)
+inline void count_chars(string input, charvec &counts)
 {
     string::iterator sit = input.begin();
     unsigned char index = 0;
     char charIndex;
 
-    for (charvec_it cit=counts.begin(); cit != counts.end(); cit++) 
+    for (charvec_it cit=counts.begin(); cit != counts.end(); cit++)
         *cit=0;
     for (sit = input.begin() ; sit < input.end(); ++sit) {
         charIndex = tolower(*sit) - 'a';
-        if ((charIndex >= 0) && (charIndex < NUMCHARS)) 
+        if ((charIndex >= 0) && (charIndex < NUMCHARS)) {
             counts[charIndex]++;
+            cout << "char " << to_string(distance(input.begin(),sit)) << ":" << *sit << "(" << to_string(charIndex) << ") = " << to_string(counts[charIndex]) << endl;
+        }
+    }
+    int total=0;
+    for (charvec_it cit=counts.begin(); cit != counts.end(); cit++) 
+        total+=*cit;
+    if (total != input.length()) {
+        cerr << "input is " << to_string(input.length());
+        cerr << " but array total is " << to_string(total) << endl;
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -115,33 +125,56 @@ inline string dumpvec(charvec x)
 {
     string result="";
     charvec_it it;
-    for (it=x.begin(); it != x.end()-1; it++) {
+    for (it=x.begin(); it != x.end(); it++) {
         result.append(to_string(*it) + ",");
     }
-    result.append(to_string(*(x.end())));
+    result.pop_back();
     return result;
+}
+
+void init_vectors(void)
+{
+    typedef vector< charvec > charDist;
+    charDist cv(MAXCHARS, charvec(NUMCHARS));
+    for (unsigned char i=0; i < MAXCHARS; i++) {
+        count_chars(numberNames[i],cv[i]);
+        cout << to_string(i) << ":";
+        cout << dumpvec(cv[i]) << ":" << numberNames[i] << endl;
+    }
 }
 
 void solve(string prefix)
 {
-    charvec seed(NUMCHARS);
+    charvec attempt(NUMCHARS);
     charvec result(NUMCHARS);
-    charvec zero(NUMCHARS);
-    string testString;
+    charvec prefixCount(NUMCHARS);
+    string sentence;
 
-    //count_chars(prefix, seed);
+    count_chars(prefix, prefixCount);
+    cout << "prefix:" << dumpvec(prefixCount) << endl;
+    sentence = prefix + gen_string(prefixCount);
+    count_chars(sentence, attempt);
 
     do {
-        testString = prefix + gen_string(seed);
-        count_chars(testString, result);
-        cout << dumpvec(seed) << ":" << testString << endl;
-    } while (seed != result);
+        // modify the attempt
+       
+        // generate the sentence 
+        sentence = prefix + gen_string(attempt);
+
+        // gen the histogram
+        count_chars(sentence, result);
+
+        cout << dumpvec(attempt) << "-" << dumpvec(result);
+        cout << endl; 
+
+    } while (attempt == result);
 }
 
 int main(void)
 {
     string prefix="Joe Boyle's challenge is to construct a sentence which contains ";
     init_number_names();
+    init_vectors();
     solve(prefix);
     exit(EXIT_SUCCESS);
 }
