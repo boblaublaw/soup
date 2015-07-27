@@ -24,15 +24,15 @@ std::vector<T> operator-(const std::vector<T>& a, const std::vector<T>& b)
 }
 
 template <typename T>
-std::vector<T> operator+(const std::vector<T>& a, const std::vector<T>& b)
+std::vector<T> operator+(const vector<T>& a, const vector<T>& b)
 {
     assert(a.size() == b.size());
 
-    std::vector<T> result;
+    vector<T> result;
     result.reserve(a.size());
 
-    std::transform(a.begin(), a.end(), b.begin(), 
-                   std::back_inserter(result), std::plus<T>());
+    transform(a.begin(), a.end(), b.begin(), 
+                   back_inserter(result), plus<T>());
     return result;
 }
 
@@ -49,6 +49,8 @@ typedef vector< charvec > charDist;
 map<unsigned char,string> simpleNames;
 map<unsigned char,string> numberNames;
 charDist cv(MAXCHARS, charvec(NUMCHARS));
+charvec ones(NUMCHARS,1);
+charvec zero(NUMCHARS);
 
 inline string dumpvec(charvec x)
 {
@@ -59,6 +61,12 @@ inline string dumpvec(charvec x)
     }
     result.pop_back();
     return result;
+}
+
+inline void calc_chars(charvec input, charvec &counts)
+{
+    for (charvec_it cit=counts.begin(); cit != counts.end(); cit++)
+        *cit=2;
 }
 
 inline void count_chars(string input, charvec &counts)
@@ -106,7 +114,7 @@ string convert_number_names(unsigned char input)
 
 void init_number_data(void)
 {
-    unsigned char i;
+    unsigned char i,j;
 
     // human readable name parts:
     simpleNames[90] = "ninety";
@@ -155,6 +163,13 @@ void init_number_data(void)
         //cout << to_string(i) << ":";
         //cout << dumpvec(cv[i]) << ":" << numberNames[i] << endl;
     }
+#if 0
+    for (i=0; i < MAXCHARS; i++) {
+        for (j=0; j < MAXCHARS; j++) {
+            cout << to_string(i) << "," << to_string(j) << endl;
+        }
+    }
+#endif
 }
 
 inline string gen_string(charvec counts)
@@ -184,41 +199,39 @@ inline string gen_string(charvec counts)
 void solve(string prefix)
 {
     charvec attempt(NUMCHARS);
-    charvec result(NUMCHARS);
+    charvec measureResult(NUMCHARS);
+    charvec calcResult(NUMCHARS);
     charvec prefixCount(NUMCHARS);
-    charvec ones(NUMCHARS);
-    charvec zero(NUMCHARS);
     charvec diff(NUMCHARS);
     string sentence;
 
-    for (charvec_it cit=ones.begin(); cit != ones.end(); cit++)
-        *cit=1;
-    
     // start with the prefix
     count_chars(prefix, prefixCount);
     // add one instance of each letter
-    attempt = prefixCount + ones;
+    //attempt = prefixCount + ones;
     // make a sentence and determine histogram
-    sentence = prefix + gen_string(prefixCount);
-    count_chars(sentence, attempt);
+    //sentence = prefix + gen_string(prefixCount);
+    //count_chars(sentence, prefixCount + ones);
 
     do {
         // modify the attempt
         
        
-        // generate the sentence 
-        sentence = prefix + gen_string(attempt);
+        // generate the sentence and measure hist
+        sentence = prefix + gen_string(attempt + prefixCount + ones);
+        count_chars(sentence, measureResult);
+        //cout << "adiff:" << dumpvec(measureResult - attempt) << endl;
 
-        // gen the histogram
-        count_chars(sentence, result);
+        // calc the histogram
+        calc_chars(attempt + prefixCount + ones, calcResult);
+        cout << "measu:" << dumpvec(measureResult) << endl;
+        cout << "calc: " << dumpvec(calcResult) << endl;
+        cout << "cmdif:" << dumpvec(measureResult - calcResult) << endl;
 
-        diff = result - attempt;
         //cout << dumpvec(attempt) << "-" << dumpvec(result);
         //cout << endl; 
         //cout << sentence;
-        cout << dumpvec(diff);
         cout << endl; 
-
     } while (diff != zero);
 }
 
