@@ -10,22 +10,22 @@ using namespace std;
 #include <algorithm>
 #include <functional>
 
+// http://stackoverflow.com/questions/20181940/most-efficient-way-to-solve-a-system-of-linear-equations
+
 template <typename T>
-std::vector<T> operator-(const std::vector<T>& a, const std::vector<T>& b)
-{
+std::vector<T> operator-(const std::vector<T>& a, const std::vector<T>& b) {
     assert(a.size() == b.size());
 
     std::vector<T> result;
     result.reserve(a.size());
 
     std::transform(a.begin(), a.end(), b.begin(),
-                   std::back_inserter(result), std::minus<T>());
+       std::back_inserter(result), std::minus<T>());
     return result;
 }
 
 template <typename T>
-std::vector<T> operator+(const vector<T>& a, const vector<T>& b)
-{
+std::vector<T> operator+(const vector<T>& a, const vector<T>& b) {
     assert(a.size() == b.size());
 
     vector<T> result;
@@ -63,31 +63,27 @@ inline string dumpvec(charvec x)
     return result;
 }
 
-inline void calc_chars(charvec input, charvec &counts)
-{
-    for (charvec_it cit=counts.begin(); cit != counts.end(); cit++)
-        *cit=2;
-}
-
-inline void count_chars(string input, charvec &counts)
+charvec make_hist(string input)
 {
     string::iterator sit = input.begin();
-    unsigned char index = 0;
     char charIndex;
     unsigned charCount=0;
+    charvec result(NUMCHARS);
 
-    for (charvec_it cit=counts.begin(); cit != counts.end(); cit++)
+    for (charvec_it cit=result.begin(); cit != result.end(); cit++)
         *cit=0;
+
     for (sit = input.begin() ; sit < input.end(); ++sit) {
         charIndex = tolower(*sit) - 'a';
+
         if ((charIndex >= 0) && (charIndex < NUMCHARS)) {
-            counts[charIndex]++;
-            //cout << "char " << to_string(distance(input.begin(),sit)) << ":" << *sit << "(" << to_string(charIndex) << ") = " << to_string(counts[charIndex]) << endl;
+            result[charIndex]++;
             charCount++;
         }
     }
+
     int total=0;
-    for (charvec_it cit=counts.begin(); cit != counts.end(); cit++) 
+    for (charvec_it cit=result.begin(); cit != result.end(); cit++)
         total+=*cit;
 
     if (total != charCount) {
@@ -95,11 +91,11 @@ inline void count_chars(string input, charvec &counts)
         cerr << " but array total is " << to_string(total) << endl;
         exit(EXIT_FAILURE);
     }
+    return result;
 }
 
 string convert_number_names(unsigned char input) 
 {
-    string output = "";
     for(map<unsigned char, string>::reverse_iterator it = simpleNames.rbegin(); it != simpleNames.rend(); it++) {
         unsigned char key=it->first;
         if (key < input) 
@@ -152,7 +148,7 @@ void init_number_data(void)
 
     // figure out what each count contributes as a vector
     for (i=0; i < MAXCHARS; i++) {
-        count_chars(numberNames[i],cv[i]);
+        cv[i] = make_hist(numberNames[i]);
         // we add a count for 's' here because every count
         // includes an 's'. ie - "one X's"
         //                              ^
@@ -160,85 +156,98 @@ void init_number_data(void)
         //                              |
         //                              |
         cv[i]['s' - 'a']++; 
-        //cout << to_string(i) << ":";
-        //cout << dumpvec(cv[i]) << ":" << numberNames[i] << endl;
-    }
-#if 0
-    for (i=0; i < MAXCHARS; i++) {
-        for (j=0; j < MAXCHARS; j++) {
-            cout << to_string(i) << "," << to_string(j) << endl;
-        }
-    }
+#if 1
+        cout << to_string(i) << ":";
+        cout << dumpvec(cv[i]) << ":" << numberNames[i] << endl;
 #endif
+    }
 }
 
 inline string gen_string(charvec counts)
 {
     string output = "";
     charvec_it it;
+#ifdef DEBUG
+    for (it=counts.begin(); it!=counts.end(); it++) {
+        cout << "index:     " <<             distance(counts.begin(), it) << endl;
+        cout << "str index: " << numberNames[distance(counts.begin(), it)] << endl;
+        cout << "count:     " <<           + *it  << endl; 
+        cout << "str count: " << numberNames[ + *it] << endl; 
+        string cs="";
+        cs.append(1,'a' + distance(counts.begin(), it));
+        cout << "character: " << cs << endl;
+        cout << endl;
+    }
+#endif
 
     for (it=counts.begin(); it != counts.end()-1; it++) {
         if (*it >= MAXCHARS) {
             cerr << "count of " << *it << " has exceeded " << MAXCHARS << endl;
             exit(EXIT_FAILURE);
         }
-        output.append(numberNames[counts[*it]]);
+        output.append(numberNames[ + *it]);
         output.append(" ");
         output.append(1,'a' + distance(counts.begin(), it));
         output.append("'s, ");
     }
-    it=counts.end();
+
+    it = counts.end();
     output.append("and ");
-    output.append(numberNames[counts[*it]]);
-    output.append(" ");
-    output.append(1,'z');
-    output.append("'s.");
+    output.append(numberNames[ + *it]);
+    output.append(" z's.");
     return output;
 }
 
-void solve(string prefix)
+void solve(string prefixString)
 {
     charvec attempt(NUMCHARS);
-    charvec measureResult(NUMCHARS);
-    charvec calcResult(NUMCHARS);
-    charvec prefixCount(NUMCHARS);
-    charvec diff(NUMCHARS);
+    charvec diffHist(NUMCHARS);
+    charvec prefixHist(NUMCHARS);
+    charvec resultHist(NUMCHARS);
+    charvec solutionHist(NUMCHARS);
     string sentence;
+    string attemptString;
+    string resultString;
 
-    // start with the prefix
-    count_chars(prefix, prefixCount);
-    // add one instance of each letter
-    //attempt = prefixCount + ones;
+    cout << "the prefix string is \"" << prefixString << "\"" << endl;
+
+    prefixHist = make_hist(prefixString);
+    cout << "the prefix histogram is " << dumpvec(prefixHist) << endl;
+
     // make a sentence and determine histogram
-    //sentence = prefix + gen_string(prefixCount);
-    //count_chars(sentence, prefixCount + ones);
+    attemptString = gen_string(prefixHist + solutionHist);
 
     do {
         // modify the attempt
         
-       
-        // generate the sentence and measure hist
-        sentence = prefix + gen_string(attempt + prefixCount + ones);
-        count_chars(sentence, measureResult);
-        //cout << "adiff:" << dumpvec(measureResult - attempt) << endl;
+        solutionHist = solutionHist + ones;;
+        
+        //cout << attemptString << endl;
+        
+        // measure the attempt
+        sentence = prefixString + attemptString;
+        resultHist = make_hist(sentence);
 
-        // calc the histogram
-        calc_chars(attempt + prefixCount + ones, calcResult);
-        cout << "measu:" << dumpvec(measureResult) << endl;
-        cout << "calc: " << dumpvec(calcResult) << endl;
-        cout << "cmdif:" << dumpvec(measureResult - calcResult) << endl;
+        diffHist = resultHist - prefixHist - solutionHist;
+        
+        cout << endl;
+        cout << "   result   " << dumpvec(resultHist) << endl;
+        cout << " - prefix   " << dumpvec(prefixHist) << endl;
+        cout << " - solution " << dumpvec(solutionHist) << endl;
+        cout << "            ____________________________________________________________________" << endl;
+        cout << " = diff     " << dumpvec(diffHist) << endl;
+        cout << endl;
 
-        //cout << dumpvec(attempt) << "-" << dumpvec(result);
-        //cout << endl; 
-        //cout << sentence;
-        cout << endl; 
-    } while (diff != zero);
+    } while (diffHist != zero);
 }
 
 int main(void)
 {
-    string prefix="Joe Boyle's challenge is to construct a sentence which contains ";
     init_number_data();
+
+    string prefix="Joe Boyle's challenge is to construct a sentence which contains ";
+    //string prefix = "abcee";
     solve(prefix);
+
     exit(EXIT_SUCCESS);
 }
