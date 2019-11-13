@@ -3,6 +3,9 @@ import os
 import sys
 import json
 import string
+from subprocess import check_output
+from collections import defaultdict
+from copy import deepcopy
 
 numbers = {
 	1: "one",
@@ -40,84 +43,103 @@ def lookup(num):
 		return numbers[num]
 	return num
 
-def reanalyze(s):
-	resdist={}
-	for c in string.ascii_lowercase:
-		resdist[c] = 0
+def dist_to_list(d):
+	"""turns a distribution map into a list of ints"""
+	l=[]
+	for letter in string.ascii_lowercase:
+		if letter in d:
+			l.append(d[letter])
+		else:
+			l.append(0)
+	return l
+
+
+def str_to_dist(s):
+	"""turns a string into a distribution map"""
+	d=defaultdict(int)
 	for c in s:
 		if c in string.ascii_lowercase:
-			resdist[c]=resdist[c]+1
-	reslist=[]
-	for c in string.ascii_lowercase:
-		reslist.append(resdist[c])
-	print(json.dumps(reslist))
+			d[c]=d[c]+1
+	return d
+
+
+def list_to_dist(l):
+	"""turns a list of ints into a distribution map"""
+	d = {}
+	for letter in string.ascii_lowercase:
+		d[letter] = l.pop(0)
+	return d
+
 
 if __name__ == '__main__':
-	chars = {}
-	for letter in string.ascii_lowercase:
-		chars[letter] = 0
-
 	words = sys.argv[1:]
-	result = " ".join(sys.argv[1:]) + " "
-
+	# Seed the final result
+	result = " ".join(words) + " "
 	words.append("and")
 
-	inString = ''.join(words)
+	seedstring = ''.join(words).lower()
+	#print ("seedstring: " + seedstring)
+	seeddist = str_to_dist(seedstring)
 
-	for letter in inString:
-		if letter in string.ascii_lowercase:
-			chars[letter] = chars[letter] + 1
-
-	charlist = []
-	for letter in string.ascii_lowercase:
-		charlist.append(chars[letter])
-
+	charlist = dist_to_list(seeddist)
 	outjson = { "sentenceSeed": charlist }
 
-	#os.system("sentient -c self-enumerating-pangram.snt > unoptimized.json")
-	#os.system("sentient -o unoptimized.json > optimized.json")
-	#os.system("sentient --run optimized.json --assign '%s' --machine lingeling > out.json" % json.dumps(outjson))
-	with open ("out.json") as solfile:
-		sol = solfile.read()
-		soldist = json.loads(sol)
-		if "letterCounts" not in soldist:
-			print("no solution", file=sys.stderr)
-			sys.exit(-1)
-		soldist = soldist["letterCounts"]
-		resdist = {}
-		for letter in string.ascii_lowercase:
-			count = soldist.pop(0)
-			resdist[letter] = count
+	# check if these intermediaries exist:
+	if not os.path.exists("unoptimized.json"):
+		os.system("sentient -c self-enumerating-pangram.snt > unoptimized.json")
+	if not os.path.exists("optimized.json"):
+		os.system("sentient -o unoptimized.json > optimized.json")
+	solvedjson = check_output(["sentient", "--run","optimized.json","--assign",json.dumps(outjson),"--machine","lingeling"])
+	solvedjson = solvedjson.decode("utf-8").rstrip()
+	solved = json.loads(solvedjson)
+	"""
+	with open("out.json", "w+") as outfile:
+		outfile.write(json.dumps(solved))
+	outfile = open("out.json")
+	out = outfile.read()
+	solved = json.loads(out)
+	"""
 
-		#split into list and final element
-		usedletters = []
-		for letter in string.ascii_lowercase:
-			if resdist[letter] > 0:
-				usedletters.append(letter)
-		finalletter = usedletters[-1:]
-		allbutlast = usedletters[:-1]
+	if "letterCounts" not in solved:
+		print("no solution", file=sys.stderr)
+		sys.exit(-1)
 
-		for letter in allbutlast:
-			count = resdist[letter]
-			if count > 1:
-				eng = lookup(count)
-				result = result + "%s %s's, " % (eng, letter)
-			elif count > 0:
-				eng = lookup(count)
-				result = result + "%s %s, " % (eng, letter)
+	lettercounts = solved["letterCounts"]
+	resdist = list_to_dist(deepcopy(lettercounts))
 
-		# end the sentence
-		result = result + "and "
-		letter = finalletter[0]
+	#split into list and final element
+	usedletterdict = { k: resdist[k] for k in resdist if resdist[k] > 0 }
+	usedletters = list(usedletterdict.keys())
+	finalletter = usedletters[-1:]
+	allbutlast = usedletters[:-1]
+
+	for letter in allbutlast:
 		count = resdist[letter]
 		if count > 1:
 			eng = lookup(count)
-			result = result + "%s %s's." % (eng, letter)
+			result = result + "%s %s's, " % (eng, letter)
 		elif count > 0:
 			eng = lookup(count)
-			result = result + "%s %s." % (eng, letter)
-		print(result)
-		reanalyze(result,soldist)
+			result = result + "%s %s, " % (eng, letter)
 
-# [3, 1, 3, 2, 38, 6, 3, 11, 9, 1, 1, 3, 1, 18, 13, 2, 1, 12, 25, 21, 4, 4, 6, 3, 4, 1]
-# [3, 1, 3, 2, 38, 6, 3, 11, 9, 1, 1, 3, 1, 18, 13, 2, 1, 12, 25, 21, 4, 4, 6, 3, 4, 1]
+	# end the sentence
+	result = result + "and "
+	letter = finalletter[0]
+	count = resdist[letter]
+	if count > 1:
+		eng = lookup(count)
+		result = result + "%s %s's." % (eng, letter)
+	elif count > 0:
+		eng = lookup(count)
+		result = result + "%s %s." % (eng, letter)
+
+	# turn a string into a distribution
+	resdist=str_to_dist(result.lower())
+	# and a distribution into a list of ints
+	reslist=dist_to_list(resdist)
+	if reslist != lettercounts:
+		print("mismatched letter counts!", file=sys.stderr)
+		print('solver:  ' + json.dumps(lettercounts), file=sys.stderr)
+		print('results: ' + json.dumps(reslist), file=sys.stderr)
+		sys.exit(-1)
+	print(result)
