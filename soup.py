@@ -34,14 +34,15 @@ numbers = {
 
 def lookup(num):
 	if num > 40:
-		return numbers[40] + " " + lookup (num - 40)
+		return numbers[40] + "-" + lookup (num - 40)
 	elif num > 30:
-		return numbers[30] + " " + lookup (num - 30)
+		return numbers[30] + "-" + lookup (num - 30)
 	elif num > 20:
-		return numbers[20] + " " + lookup (num - 20)
+		return numbers[20] + "-" + lookup (num - 20)
 	if num in numbers:
 		return numbers[num]
 	return num
+
 
 def dist_to_list(d):
 	"""turns a distribution map into a list of ints"""
